@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css"> <!--calling external files-->
+  
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <!-- Bootstrap JS Bundle (includes Popper.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    
+    <title>Professional Dashboard</title>
+</head>
+<body style="background: linear-gradient(-45deg, #f8bcbe, #f8cec0, #fdc0ec, #b4cefc); background-size: 400% 400%; animation: gradientAnimation 15s ease infinite; margin: 0; padding: 0;">
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="text-center">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+    <div id="container">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+          <label><H4>Welcome {{username}}</H4></label>          
+              <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+              </button>
+              <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                  <li class="nav-item">
+                    <a class="nav-link active float-end" aria-current="page" href="{{ url_for('logout') }}"><h5>Logout</h5></a>
+                    <a class="nav-link active float-end" data-bs-toggle="modal" data-bs-target="#statusChartModal" aria-current="page">
+                      <h5>Summary</h5>
+                    </a>
+                    <a class="nav-link active float-end" aria-current="page" href="{{ url_for('professional_dashboard') }}"><h5>Home</h5></a>  
+                  </li>
+                </ul>
+                <form class="d-flex" action="{{ url_for('professional_dashboard') }}" method="GET">
+                  <div class="input-group">
+                      <select class="form-select" name="search_filter" required>
+                          <option value="date_of_request">Date</option>
+                          <option value="customer_address">Address</option>
+                          <option value="customer_pincode">Pincode</option>
+                      </select>
+                      <input class="form-control" type="search" name="search_query" placeholder="Search..." aria-label="Search" required>
+                      <button class="btn btn-outline-success" type="submit">Search</button>
+                  </div>
+              </form>
+              </div>
+            </div>
+          </nav>
+          
+          <div id="container">
+            <img src="/static/img/profile.png" 
+                 alt="Profile"
+                 role="button"
+                 data-bs-toggle="modal" 
+                 data-bs-target="#exampleModalToggle"
+                 style="width: 50px; height: 50px; cursor: pointer;">
+            
+            <!-- Professional Profile Modal -->
+            <div class="modal fade" id="exampleModalToggle" aria-hidden="true" aria-labelledby="exampleModalToggleLabel" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form action="{{ url_for('update_professional_profile') }}" method="POST">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="exampleModalToggleLabel">Profile</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                {% if pro %}
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label"><strong>Name:</strong></label>
+                                        <input type="text" class="form-control" id="name" name="name" value="{{ pro.uname }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label"><strong>Email:</strong></label>
+                                        <input type="email" class="form-control" id="email" name="email" value="{{ pro.email }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label"><strong>Service:</strong></label>
+                                        <input type="text" class="form-control" value="{{ pro.service_type }}" readonly>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="experience" class="form-label"><strong>Experience:</strong></label>
+                                        <input type="text" class="form-control" id="experience" name="experience" value="{{ pro.exp }}" readonly>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="address" class="form-label"><strong>Address:</strong></label>
+                                        <input type="text" class="form-control" id="address" name="address" value="{{ pro.add }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="pincode" class="form-label"><strong>Pincode:</strong></label>
+                                        <input type="text" class="form-control" id="pincode" name="pincode" value="{{ pro.pin }}" required>
+                                    </div>
+                                {% else %}
+                                    <p>User details not found.</p>
+                                {% endif %}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+      
+          <h2 class="text-center my-4">Services Today</h2>
+          {% if customer_requests %}
+            <table class="table table-bordered table-striped">
+              <thead class="table-dark">  
+              <tr>
+                <th scope="col">Id</th>
+                <th scope="col">Customer Name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Address</th>
+                <th scope="col">Pincode</th>
+                <th scope="col">Service Name</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for request in customer_requests %}
+                <tr>
+                  <td>{{ request.request_id }}</td>
+                  <td>{{ request.customer_name }}</td>
+                  <td>{{ request.customer_email }}</td>
+                  <td>{{ request.customer_address }}</td>
+                  <td>{{ request.customer_pincode }}</td>
+                  <td>{{ request.service_name }}</td>
+                  <td>
+                    <form action="{{ url_for('accept_request', request_id=request.request_id) }}" method="POST">
+                      <button type="submit" class="btn btn-success">Accept</button>
+                    </form>
+                    <form action="{{ url_for('reject_request', request_id=request.request_id) }}" method="POST">
+                      <button type="submit" class="btn btn-danger">Reject</button>
+                    </form>
+          
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <h5 class="text-center">No service requests for today.</h5>
+        {% endif %}
+        
+        <h2 class="text-center my-4">Closed Services</h2>
+          <table class="table table-bordered table-striped">
+            <thead class="table-dark">    
+              <tr>
+                <th scope="col">Id</th>
+                <th scope="col">Customer name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Address</th>
+                <th scope="col">Pincode</th>
+                <th scope="col">Date</th>
+                <th scope="col">Rating</th>
+                <th scope="col">Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if closed_services %}
+                {% for service in closed_services %}
+                  <tr>
+                    <td>{{ service.req_id }}</td>
+                    <td>{{ service.customer_name }}</td>
+                    <td>{{ service.customer_email }}</td>
+                    <td>{{ service.customer_address }}</td>
+                    <td>{{ service.customer_pincode }}</td>
+                    <td>{{ service.date_of_request }}</td>
+                    <td>{{ service.rating }}</td>
+                    <td>{{ service.remarks }}</td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                  <tr>
+                    <td colspan="8">No closed services available</td>
+                  </tr>
+              {% endif %}
+            </tbody>
+            </table>            
+          </div>
+          
+                    </div>
+                  </div>
+                </div>
+              </div>     
+        </div>
+
+
+
+
+        <!-- Bar and Pie Chart Modal -->
+<div class="modal fade" id="statusChartModal" tabindex="-1" aria-labelledby="statusChartModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="statusChartModalLabel">Professional Summary</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6 d-flex flex-column align-items-center">
+            <h6 class="text-center">Ratings Distribution</h6>
+            <canvas id="ratingsPieChart" width="300" height="300"></canvas>
+          </div>
+          <div class="col-md-6 d-flex flex-column align-items-center">
+            <h6 class="text-center">Service Request Status</h6>
+            <canvas id="statusBarChart" width="300" height="300"></canvas>
+          </div>
+        </div>
+      </div>      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  
+  document.addEventListener('DOMContentLoaded', function () {
+    const ratingsCtx = document.getElementById('ratingsPieChart').getContext('2d');
+    const statusCtx = document.getElementById('statusBarChart').getContext('2d');
+    let ratingsChart, statusChart;
+
+    // Event Listener for Modal
+    document.getElementById('statusChartModal').addEventListener('shown.bs.modal', async function () {
+      // Fetch data from the backend
+      const response = await fetch('{{ url_for("pro_ratings_summary") }}');
+      const data = await response.json();
+
+      const ratingsData = data.ratings;
+      const statusCounts = data.status_counts;
+
+      // Ratings Pie Chart
+      const ratingsLabels = Object.keys(ratingsData);
+      const ratingsValues = Object.values(ratingsData);
+
+      if (ratingsChart) ratingsChart.destroy(); // Destroy existing chart
+      ratingsChart = new Chart(ratingsCtx, {
+        type: 'pie',
+        data: {
+          labels: ratingsLabels,
+          datasets: [{
+            data: ratingsValues,
+            backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56'],
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: true
+            },
+            title: {
+              display: true,
+              text: 'Ratings Distribution'
+            }
+          }
+        }
+      });
+
+      // Status Bar Chart
+      if (statusChart) statusChart.destroy(); // Destroy existing chart
+      statusChart = new Chart(statusCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Ongoing Services', 'Closed Services'],
+          datasets: [{
+            label: 'Counts',
+            data: [
+              statusCounts.accepted || 0,
+              statusCounts.closed || 0
+            ],
+            backgroundColor: ['#007bff', '#dc3545', '#28a745']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            title: {
+              display: true,
+              text: 'Service Request Status Summary'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    });
+  });
+</script>
+
+
+
+    <!-- Modal for Search Results -->
+<div class="modal fade" id="searchResultsModal" tabindex="-1" aria-labelledby="searchResultsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="searchResultsModalLabel">Search Results for "{{ search_query }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="modal-body">
+              {% if search_results %}
+                <table class="table table-bordered table-striped">
+                  <thead class="table-dark">
+                    <tr>
+                      <th scope="col">Id</th>
+                      <th scope="col">Customer Name</th>
+                      <th scope="col">Email</th>
+                      <th scope="col">Address</th>
+                      <th scope="col">Pincode</th>
+                      <th scope="col">Date</th>
+                      <th scope="col">Rating</th>
+                      <th scope="col">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for result in search_results %}
+                      <tr>
+                        <td>{{ result.req_id }}</td>
+                        <td>{{ result.customer_name }}</td>
+                        <td>{{ result.customer_email }}</td>
+                        <td>{{ result.customer_address }}</td>
+                        <td>{{ result.customer_pincode }}</td>
+                        <td>{{ result.date_of_request }}</td>
+                        <td>{{ result.rating }}</td>
+                        <td>{{ result.remarks }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              {% else %}
+                <h5>No matching services found.</h5>
+              {% endif %}
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <script>
+        {% if search_query and search_results is not none %}
+          var searchResultsModal = new bootstrap.Modal(document.getElementById('searchResultsModal'));
+          searchResultsModal.show();
+        {% endif %}
+      </script>
+      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+      <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</html> 
+
+</body>
+</html>
+
+         

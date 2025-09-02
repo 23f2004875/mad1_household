@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css"> <!--calling external files-->
+    <!--third party bootstrap-->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>User Dashboard</title>
+</head>
+<body style="background: linear-gradient(-45deg, #f8bcbe, #f8cec0, #fdc0ec, #b4cefc); background-size: 400% 400%; animation: gradientAnimation 15s ease infinite; margin: 0; padding: 0;">
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="text-center">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+    <div id="container">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+          <label><H4>Welcome {{username}}</H4></label>          
+              <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+              </button>
+              <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                  <li class="nav-item">
+                    <a class="nav-link active float-end" aria-current="page" href="{{ url_for('logout') }}"><h5>Logout</h5></a>
+                    <a class="nav-link active float-end" data-bs-toggle="modal" data-bs-target="#summaryModal" aria-current="page"><h5>Summary</h5></a>
+                    <a class="nav-link active float-end" aria-current="page" href="{{ url_for('user_dashboard') }}"><h5>Home</h5></a>
+                  </li>
+                </ul>
+                <form class="d-flex" action="{{ url_for('user_dashboard') }}" method="GET">
+                  <input class="form-control me-2" type="search" name="query" placeholder="Search by service name" aria-label="Search">
+                  <button class="btn btn-outline-success" type="submit">Search</button>
+                </form>
+              </div>
+            </div>
+          </nav>
+          
+          <div id="container">
+            <img src="/static/img/profile.png" 
+                 alt="Profile"
+                 role="button"
+                 data-bs-toggle="modal" 
+                 data-bs-target="#profileModal"
+                 style="width: 50px; height: 50px; cursor: pointer;">
+        
+            <!-- Profile Modal -->
+            <div class="modal fade" id="profileModal" aria-hidden="true" aria-labelledby="profileModalLabel" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form action="{{ url_for('update_profile') }}" method="POST">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="profileModalLabel">Profile</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                {% if user %}
+                                    <div class="mb-3">
+                                        <label for="uname" class="form-label"><strong>Name:</strong></label>
+                                        <input type="text" class="form-control" id="uname" name="uname" value="{{ user.uname }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label"><strong>Email:</strong></label>
+                                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="address" class="form-label"><strong>Address:</strong></label>
+                                        <input type="text" class="form-control" id="address" name="address" value="{{ user.add }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="pincode" class="form-label"><strong>Pincode:</strong></label>
+                                        <input type="Integer" class="form-control" id="pincode" name="pincode" value="{{ user.pin }}" required>
+                                    </div>
+                                {% else %}
+                                    <p>User details not found</p>
+                                {% endif %}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-success">Save Changes</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div> 
+          
+
+        <div class="container">
+          <div class="row">
+              {% set predefined_images = {
+                  'Plumbing': 'plumbing.jpeg',
+                  'Electricals': 'Electricals.jpeg',
+                  'Cleaning Services': 'cleaning_services.jpeg',
+                  'Carpenter': 'carpenter.jpeg',
+                  'Salon': 'Salon.jpeg',
+                  'Bathclean': 'Bathclean.jpeg'} %}
+      
+              <h3>Most Populars...</h3>
+                  <!-- Display predefined service cards -->
+              {% for service in services[:6] %}
+              <div class="col-md-4 mb-4">
+                  <div class="card h-100">
+                      <!-- Use predefined image -->
+                      <img src="{{ url_for('static', filename='img/' + predefined_images.get(service.name, 'default.jpeg')) }}"
+                           alt="{{ service.name }}"
+                           class="card-img-top">
+                      <div class="card-body">
+                          <h5 class="card-title">{{ service.name }}</h5>
+                          <p class="card-text">{{ service.description }}</p>
+                          <p><strong>Price:</strong> {{ service.price }}Rs</p>
+                          <form action="{{ url_for('book_service', service_id=service.id) }}" method="post">
+                              <button type="submit" class="btn btn-primary">Book Service</button>
+                          </form>
+                      </div>
+                  </div>
+              </div>
+              {% endfor %}
+          </div>
+      </div>
+
+          <h2 class="text-center my-4">All Available Services</h2>
+          {% if services %}
+            <table class="table table-bordered table-striped">
+              <thead class="table-dark">           
+                      <tr>
+                          <th scope="col">ID</th>
+                          <th scope="col">Service Name</th>
+                          <th scope="col">Base Price</th>
+                          <th scope="col">Time Required (approx)</th>
+                          <th scope="col">Description</th>
+                          <th scope="col">Action</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for service in services %}
+                      <tr>
+                          <td>{{ service.id }}</td>
+                          <td>{{ service.name }}</td>
+                          <td>{{ service.price }}</td>
+                          <td>{{ service.time_required }}</td>
+                          <td>{{ service.description }}</td>
+                          <td>
+                            <form action="{{ url_for('book_service', service_id=service.id) }}" method="POST">
+                              <button type="submit" class="btn btn-primary">Book</button>
+                            </form>
+                      </tr>
+                      {% endfor %}
+                  </tbody>
+            </table>
+          {% else %}
+            <h5>No services available</h5>
+          {% endif %}
+
+
+
+<h2 class="text-center my-4">Requested Services</h2>
+{% if requested_services %}
+  <table class="table table-bordered table-striped">
+    <thead class="table-dark">            
+      <tr>
+        <th scope="col">Request ID</th>
+        <th scope="col">Service Name</th>
+        <th scope="col">Date of Request</th>
+        <th scope="col">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for request in requested_services %}
+        <tr>
+          <td>{{ request.req_id }}</td>
+          <td>{{ request.service_name }}</td>
+          <td>{{ request.date_of_request }}</td>
+          <td>
+            <!-- Edit button that triggers modal -->
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editRequestModal{{ request.req_id }}">Edit</button>
+            
+            <form action="{{ url_for('cancel_service_request', request_id=request.req_id) }}" method="POST" style="display:inline;">
+              <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to cancel this service request?');">Cancel</button>
+            </form>          
+          </td>
+        </tr>
+  
+        <!-- Modal Structure for Editing the Request -->
+        <div class="modal fade" id="editRequestModal{{ request.req_id }}" tabindex="-1" role="dialog" aria-labelledby="editRequestModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="editRequestModalLabel">Edit Request Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <form action="{{ url_for('edit_request', request_id=request.req_id) }}" method="POST">
+                <div class="modal-body">
+                  <div class="form-group">
+                    <label for="dateOfRequest">Date of Request</label>
+                    <input type="date" class="form-control" id="dateOfRequest" name="date_of_request" value="{{ request.date_of_request }}" required>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                  <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <h6 class="text-center my-4">No requested services available right now.</h6>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <h2 class="text-center my-4">Service History</h2>
+    <table class="table table-bordered table-striped">
+      <thead class="table-dark">   
+    <tr>
+      <th scope="col">Id</th>
+      <th scope="col">Service Name</th>
+      <th scope="col">Professional Name</th>
+      <th scope="col">Email</th>
+      <th scope="col">Date of Request</th>
+      <th scope="col">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if service_history %}
+      {% for req in service_history %}
+      <tr>
+        <td>{{ req.req_id }}</td>
+        <td>{{ req.service_name }}</td>
+        <td>{{ req.professional_name  }}</td>
+        <td>{{ req.professional_email }}</td>
+        <td>{{ req.date_of_request }}</td>
+        <td>
+        {% if req.status == "accepted" %}
+            <!-- Close It button that triggers the modal -->
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#closeModal{{ req.req_id }}">
+              Close It?
+            </button>
+            
+            <!-- Modal for closing the service request -->
+            <div class="modal fade" id="closeModal{{ req.req_id }}" tabindex="-1" aria-labelledby="closeModalLabel" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <form action="{{ url_for('close_request', request_id=req.req_id) }}" method="POST">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="closeModalLabel">Close Service Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <p><strong>Request ID:</strong> {{ req.req_id }}</p>
+                    <p><strong>Service Name:</strong> {{ req.service_name }}</p>
+                    <p><strong>Service Description:</strong> {{ req.service_description }}</p>
+                    <p><strong>Date:</strong> {{ req.date_of_request }}</p>
+                    <p><strong>Professional ID:</strong> {{ req.professional_id }}</p>
+                    <p><strong>Professional Name:</strong> {{ req.professional_name }}</p>
+                    <p><strong>Email:</strong> {{ req.professional_email }}</p>
+
+                    <!-- Rating and Remarks -->
+                    <form action="{{ url_for('close_request', request_id=req.req_id) }}" method="POST">
+                      <div class="mb-3">
+                        <label for="serviceRating{{ req.req_id }}" class="form-label"><strong>Service Rating</strong></label>
+                        <select class="form-select" name="service_rating" id="serviceRating{{ req.req_id }}" required>
+                          <option value="">Choose a rating</option>
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                          <option value="3">3</option>
+                          <option value="4">4</option>
+                          <option value="5">5</option>
+                        </select>
+                      </div>
+                      <div class="mb-3">
+                        <label for="remarks{{ req.req_id }}" class="form-label"><strong>Remarks</strong></label>
+                        <textarea class="form-control" name="remarks" id="remarks{{ req.req_id }}" rows="3" placeholder="Write any additional remarks here..."></textarea>
+                      </div>
+                  </div>                   
+                  <div class="modal-footer">
+                    <form action="{{ url_for('close_request', request_id=req.req_id) }}" method="POST">
+                      <button type="submit" class="btn btn-danger">Yes, Close It</button>
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% else %}
+            {{ req.status }}
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    {% else %}
+      <tr><td colspan="6">No service history available</td></tr>
+    {% endif %}
+  </tbody>
+</table> 
+</div>  
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const barCtx = document.getElementById('statusBarGraph').getContext('2d');
+    const pieCtx = document.getElementById('closedServicesPieChart').getContext('2d');
+
+    let statusChart, closedServicesChart;
+
+    // Event Listener for Modal Opening
+    document.getElementById('summaryModal').addEventListener('shown.bs.modal', function () {
+      fetch('/status_summary')
+        .then(response => response.json())
+        .then(data => {
+          // Bar Chart: Service Request Status
+          if (statusChart) statusChart.destroy();
+          statusChart = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+              labels: ['Ongoing', 'Closed'],
+              datasets: [{
+                label: '# of Service Requests',
+                data: [data.requested, data.closed],
+                backgroundColor: ['#007bff', '#dc3545'],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                x: {
+                  title: {
+                    display: true,
+                    text: 'Service Request Status',
+                    font: {
+                      size: 16,
+                      weight: 'bold'
+                    }
+                  }
+                },
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+
+          // Pie Chart: Closed Services by Type
+          const closedLabels = Object.keys(data.closed_services_summary);
+          const closedCounts = Object.values(data.closed_services_summary);
+
+          if (closedServicesChart) closedServicesChart.destroy();
+          closedServicesChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+              labels: closedLabels,
+              datasets: [{
+                data: closedCounts,
+                backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#4bc0c0'], // Customize colors
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top'
+                },
+                title: {
+                  display: true,
+                  text: 'Closed Services by Type'
+                }
+              }
+            }
+          });
+        })
+        .catch(err => console.error('Error fetching status summary:', err));
+    });
+  });
+</script>
+
+
+      <!-- Search Results Modal -->
+<div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="searchModalLabel">Search Results for "{{ search_query }}"</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {% if search_results %}
+          <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+              <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Service Name</th>
+                <th scope="col">Base Price</th>
+                <th scope="col">Time Required (approx)</th>
+                <th scope="col">Description</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for service in search_results %}
+              <tr>
+                <td>{{ service.id }}</td>
+                <td>{{ service.name }}</td>
+                <td>{{ service.price }}</td>
+                <td>{{ service.time_required }}</td>
+                <td>{{ service.description }}</td>
+                <td>
+                  <form action="{{ url_for('book_service', service_id=service.id) }}" method="POST">
+                    <button type="submit" class="btn btn-primary">Book</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <h5>No matching services found.</h5>
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- Summary Modal -->
+<div class="modal fade" id="summaryModal" tabindex="-1" aria-labelledby="summaryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="summaryModalLabel">Service Request Summary Chart</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <!-- Bar Chart for Status -->
+          <div class="col-md-6 d-flex flex-column align-items-center">
+            <h6 class="text-center">Service Request Status Distribution</h6>
+            <canvas id="statusBarGraph" width="300" height="300"></canvas>
+          </div>
+          <!-- Pie Chart for Closed Services -->
+          <div class="col-md-6 d-flex flex-column align-items-center">
+            <h6 class="text-center">Closed Services by Type</h6>
+            <canvas id="closedServicesPieChart" width="300" height="300"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const barCtx = document.getElementById('statusBarGraph').getContext('2d');
+    const pieCtx = document.getElementById('closedServicesPieChart').getContext('2d');
+
+    let statusChart, closedServicesChart;
+
+    // Event Listener for Modal Opening
+    document.getElementById('summaryModal').addEventListener('shown.bs.modal', function () {
+      fetch('/status_summary')
+        .then(response => response.json())
+        .then(data => {
+          // Bar Chart: Service Request Status
+          if (statusChart) statusChart.destroy();
+          statusChart = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+              labels: ['Requested', 'Ongoing', 'Closed'],
+              datasets: [{
+                label: '# of Service Requests',
+                data: [data.requested, data.accepted, data.closed],
+                backgroundColor: ['#007bff', '#28a745', '#dc3545'],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                x: {
+                  title: {
+                    display: true,
+                    text: 'Service Request Status',
+                    font: {
+                      size: 16,
+                      weight: 'bold'
+                    }
+                  }
+                },
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+
+          // Pie Chart: Closed Services by Type
+          const closedLabels = Object.keys(data.closed_services_summary);
+          const closedCounts = Object.values(data.closed_services_summary);
+
+          if (closedServicesChart) closedServicesChart.destroy();
+          closedServicesChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+              labels: closedLabels,
+              datasets: [{
+                data: closedCounts,
+                backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#4bc0c0'], // Customize colors
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top'
+                },
+                title: {
+                  display: true,
+                  text: 'Closed Services by Type'
+                }
+              }
+            }
+          });
+        })
+        .catch(err => console.error('Error fetching status summary:', err));
+    });
+  });
+</script>
+
+
+
+  </body>
+  <script>
+    // Automatically show the modal if search results exist
+    {% if search_query %}
+      var searchModal = new bootstrap.Modal(document.getElementById('searchModal'));
+      searchModal.show();
+    {% endif %}
+  </script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</html> 
